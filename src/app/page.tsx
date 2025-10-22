@@ -1,256 +1,275 @@
-"use client";
+'use client';
 
-import { useCoAgent, useCopilotAction } from "@copilotkit/react-core";
-import { CopilotKitCSSProperties, CopilotSidebar } from "@copilotkit/react-ui";
-import { useState } from "react";
-import { AgentState as AgentStateSchema } from "@/mastra/agents";
-import { z } from "zod";
-import { WeatherToolResult } from "@/mastra/tools";
+import { useState } from 'react';
+import { CopilotChat } from '@copilotkit/react-ui';
+import { useCopilotAction } from '@copilotkit/react-core';
+import '@copilotkit/react-ui/styles.css';
 
-type AgentState = z.infer<typeof AgentStateSchema>;
+export default function Home() {
+  const [papers, setPapers] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-export default function CopilotKitPage() {
-  const [themeColor, setThemeColor] = useState("#6366f1");
-
-  // 🪁 Frontend Actions: https://docs.copilotkit.ai/guides/frontend-actions
+  // Register action to render paper results dynamically
   useCopilotAction({
-    name: "setThemeColor",
-    parameters: [{
-      name: "themeColor",
-      description: "The theme color to set. Make sure to pick nice colors.",
-      required: true,
-    }],
-    handler({ themeColor }) {
-      setThemeColor(themeColor);
-    },
-  });
-
-  return (
-    <main style={{ "--copilot-kit-primary-color": themeColor } as CopilotKitCSSProperties}>
-      <YourMainContent themeColor={themeColor} />
-      <CopilotSidebar
-        clickOutsideToClose={false}
-        defaultOpen={true}
-        labels={{
-          title: "Popup Assistant",
-          initial: "👋 Hi, there! You're chatting with an agent. This agent comes with a few tools to get you started.\n\nFor example you can try:\n- **Frontend Tools**: \"Set the theme to orange\"\n- **Shared State**: \"Write a proverb about AI\"\n- **Generative UI**: \"Get the weather in SF\"\n\nAs you interact with the agent, you'll see the UI update in real-time to reflect the agent's **state**, **tool calls**, and **progress**."
-        }}
-      />
-    </main>
-  );
-}
-
-function YourMainContent({ themeColor }: { themeColor: string }) {
-  // 🪁 Shared State: https://docs.copilotkit.ai/coagents/shared-state
-  const { state, setState } = useCoAgent<AgentState>({
-    name: "weatherAgent",
-    initialState: {
-      proverbs: [
-        "CopilotKit may be new, but its the best thing since sliced bread.",
-      ],
-    },
-  })
-
-  //🪁 Generative UI: https://docs.copilotkit.ai/coagents/generative-ui
-  useCopilotAction({
-    name: "weatherTool",
-    description: "Get the weather for a given location.",
-    available: "frontend",
+    name: 'searchPapers',
+    description: 'Search for academic research papers and display results',
     parameters: [
-      { name: "location", type: "string", required: true },
+      {
+        name: 'query',
+        type: 'string',
+        description: 'The research topic to search for',
+        required: true,
+      },
+      {
+        name: 'limit',
+        type: 'number',
+        description: 'Number of papers to retrieve',
+        required: false,
+      },
     ],
-    render: ({ args, result, status }) => {
-      return <WeatherCard
-        location={args.location}
-        themeColor={themeColor}
-        result={result}
-        status={status}
-      />
+    handler: async ({ query, limit = 10 }) => {
+      setIsSearching(true);
+      setPapers([]);
+      // Actual search done by Mastra agent
+      return { query, limit, status: 'searching' };
     },
-  });
+    render: ({ status, result }) => {
+      if (status === 'executing' || isSearching) {
+        return (
+          <div className="my-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-600 border-t-transparent"></div>
+              <span className="text-indigo-700 font-medium">Searching papers...</span>
+            </div>
+          </div>
+        );
+      }
 
-  useCopilotAction({
-    name: "updateWorkingMemory",
-    available: "frontend",
-    render: ({ args }) => {
-      return <div style={{ backgroundColor: themeColor }} className="rounded-2xl max-w-md w-full text-white p-4">
-        <p>✨ Memory updated</p>
-        <details className="mt-2">
-          <summary className="cursor-pointer text-white">See updates</summary>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }} className="overflow-x-auto text-sm bg-white/20 p-4 rounded-lg mt-2">
-            {JSON.stringify(args, null, 2)}
-          </pre>
-        </details>
-      </div>
+      if (result && result.papers) {
+        return (
+          <div className="my-6">
+            <div className="grid gap-4">
+              {result.papers.map((paper: any, index: number) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:border-indigo-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                        {paper.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {paper.authors} • {paper.year}
+                      </p>
+                      <p className="text-sm text-gray-700 line-clamp-3 mb-3">
+                        {paper.abstract}
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-gray-500">
+                          📊 {paper.citationCount} citations
+                        </span>
+                        <a
+                          href={paper.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                        >
+                          View Paper →
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      return null;
     },
   });
 
   return (
-    <div
-      style={{ backgroundColor: themeColor }}
-      className="h-screen w-screen flex justify-center items-center flex-col transition-colors duration-300"
-    >
-      <div className="bg-white/20 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-white mb-2 text-center">Proverbs</h1>
-        <p className="text-gray-200 text-center italic mb-6">This is a demonstrative page, but it could be anything you want! 🪁</p>
-        <hr className="border-white/20 my-6" />
-        <div className="flex flex-col gap-3">
-          {state.proverbs?.map((proverb, index) => (
-            <div
-              key={index}
-              className="bg-white/15 p-4 rounded-xl text-white relative group hover:bg-white/20 transition-all"
-            >
-              <p className="pr-8">{proverb}</p>
-              <button
-                onClick={() => setState({
-                  ...state,
-                  proverbs: state.proverbs?.filter((_, i) => i !== index),
-                })}
-                className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity 
-                  bg-red-500 hover:bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center"
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  DeSci Research Partner
+                </h1>
+                <p className="text-sm text-gray-600">
+                  AI-powered by Mastra + Nosana
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="hidden sm:inline">Powered by</span>
+              <span className="font-semibold text-indigo-600">Nosana</span>
+              <span className="hidden sm:inline">&</span>
+              <span className="font-semibold text-purple-600">Mastra</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Info Cards */}
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {/* Card 1 */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-indigo-100">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                <svg
+                  className="w-6 h-6 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Search Papers</h3>
+              <p className="text-sm text-gray-600">
+                Find relevant academic papers on any scientific topic instantly
+              </p>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <svg
+                  className="w-6 h-6 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Get Summaries</h3>
+              <p className="text-sm text-gray-600">
+                AI-powered summaries of research findings and key insights
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Discover Trends
+              </h3>
+              <p className="text-sm text-gray-600">
+                Identify research gaps and emerging areas in your field
+              </p>
+            </div>
+          </div>
+
+          {/* Example Queries */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 mb-8 border border-indigo-100">
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Try asking about:
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                'Recent advances in CRISPR gene editing',
+                'Machine learning in drug discovery',
+                'Climate change mitigation strategies',
+                'Quantum computing applications',
+                'Renewable energy technologies',
+                'Neuroscience of memory formation',
+              ].map((query) => (
+                <button
+                  key={query}
+                  className="px-4 py-2 bg-white rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-gray-200 hover:border-indigo-300"
+                >
+                  {query}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Chat Interface */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <CopilotChat
+              className="h-[600px]"
+              labels={{
+                title: 'Research Assistant',
+                initial:
+                  "Hello! I'm your DeSci Research Partner. Ask me about any scientific topic, and I'll help you find and understand the latest research papers. Try: 'Find papers on machine learning' or 'What are the latest advances in renewable energy?'",
+              }}
+            />
+          </div>
+
+          {/* Footer Info */}
+          <div className="mt-8 text-center text-sm text-gray-600">
+            <p>
+              Powered by{' '}
+              <a
+                href="https://www.semanticscholar.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-700 font-medium"
               >
-                ✕
-              </button>
-            </div>
-          ))}
+                Semantic Scholar
+              </a>{' '}
+              | Deployed on{' '}
+              <a
+                href="https://nosana.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Nosana Network
+              </a>
+            </p>
+          </div>
         </div>
-        {state.proverbs?.length === 0 && <p className="text-center text-white/80 italic my-8">
-          No proverbs yet. Ask the assistant to add some!
-        </p>}
-      </div>
+      </main>
     </div>
-  );
-}
-
-// Weather card component where the location and themeColor are based on what the agent
-// sets via tool calls.
-function WeatherCard({
-  location,
-  themeColor,
-  result,
-  status
-}: {
-  location?: string,
-  themeColor: string,
-  result: WeatherToolResult,
-  status: "inProgress" | "executing" | "complete"
-}) {
-  if (status !== "complete") {
-    return (
-      <div
-        className="rounded-xl shadow-xl mt-6 mb-4 max-w-md w-full"
-        style={{ backgroundColor: themeColor }}
-      >
-        <div className="bg-white/20 p-4 w-full">
-          <p className="text-white animate-pulse">Loading weather for {location}...</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      style={{ backgroundColor: themeColor }}
-      className="rounded-xl shadow-xl mt-6 mb-4 max-w-md w-full"
-    >
-      <div className="bg-white/20 p-4 w-full">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-white capitalize">{location}</h3>
-            <p className="text-white">Current Weather</p>
-          </div>
-          <WeatherIcon conditions={result?.conditions} />
-        </div>
-
-        <div className="mt-4 flex items-end justify-between">
-          <div className="text-3xl font-bold text-white">
-            <span className="">
-              {result?.temperature}° C
-            </span>
-            <span className="text-sm text-white/50">
-              {" / "}
-              {((result?.temperature * 9) / 5 + 32).toFixed(1)}° F
-            </span>
-          </div>
-          <div className="text-sm text-white">{result?.conditions}</div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-white">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-white text-xs">Humidity</p>
-              <p className="text-white font-medium">{result?.humidity}%</p>
-            </div>
-            <div>
-              <p className="text-white text-xs">Wind</p>
-              <p className="text-white font-medium">{result?.windSpeed} mph</p>
-            </div>
-            <div>
-              <p className="text-white text-xs">Feels Like</p>
-              <p className="text-white font-medium">{result?.feelsLike}°</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WeatherIcon({ conditions }: { conditions: string }) {
-  if (!conditions) return null;
-
-  if (
-    conditions.toLowerCase().includes("clear") ||
-    conditions.toLowerCase().includes("sunny")
-  ) {
-    return <SunIcon />;
-  }
-
-  if (
-    conditions.toLowerCase().includes("rain") ||
-    conditions.toLowerCase().includes("drizzle") ||
-    conditions.toLowerCase().includes("snow") ||
-    conditions.toLowerCase().includes("thunderstorm")
-  ) {
-    return <RainIcon />;
-  }
-
-  if (
-    conditions.toLowerCase().includes("fog") ||
-    conditions.toLowerCase().includes("cloud") ||
-    conditions.toLowerCase().includes("overcast")
-  ) {
-    return <CloudIcon />;
-  }
-
-  return <CloudIcon />;
-}
-
-// Simple sun icon for the weather card
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-yellow-200">
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeWidth="2" stroke="currentColor" />
-    </svg>
-  );
-}
-
-function RainIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-blue-200">
-      {/* Cloud */}
-      <path d="M7 15a4 4 0 0 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 0 8H7z" fill="currentColor" opacity="0.8" />
-      {/* Rain drops */}
-      <path d="M8 18l2 4M12 18l2 4M16 18l2 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-    </svg>
-  );
-}
-
-function CloudIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-gray-200">
-      <path d="M7 15a4 4 0 0 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 0 8H7z" fill="currentColor" />
-    </svg>
   );
 }
