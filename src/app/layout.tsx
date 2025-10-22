@@ -1,22 +1,24 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { CopilotKit } from "@copilotkit/react-core";
-import "./globals.css";
-import "@copilotkit/react-ui/styles.css";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { CopilotKit } from '@copilotkit/react-core';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Nosana Mastra Agent Kit",
-  description: "An example of using CopilotKit with Mastra agents.",
+  title: 'DeSci Research Partner - AI Academic Research Assistant',
+  description:
+    'An AI-powered agent that helps researchers find and summarize academic papers on any scientific topic. Built with Mastra and deployed on Nosana.',
+  keywords: [
+    'research',
+    'academic',
+    'AI',
+    'papers',
+    'science',
+    'DeSci',
+    'Nosana',
+    'Mastra',
+  ],
 };
 
 export default function RootLayout({
@@ -26,8 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="weatherAgent">
+      <body className={inter.className}>
+        <CopilotKit 
+          runtimeUrl="/api/copilotkit"
+          agent="researchAgent"
+        >
           {children}
         </CopilotKit>
       </body>
