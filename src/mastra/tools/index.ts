@@ -1,106 +1,220 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 
-interface GeocodingResponse {
-  results: {
-    latitude: number;
-    longitude: number;
-    name: string;
-  }[];
-}
-interface WeatherResponse {
-  current: {
-    time: string;
-    temperature_2m: number;
-    apparent_temperature: number;
-    relative_humidity_2m: number;
-    wind_speed_10m: number;
-    wind_gusts_10m: number;
-    weather_code: number;
-  };
+interface SemanticScholarPaper {
+  paperId: string;
+  title: string;
+  abstract: string | null;
+  year: number | null;
+  authors: Array<{ name: string }>;
+  citationCount: number;
+  isOpenAccess: boolean;
+  url: string;
 }
 
-export type WeatherToolResult = z.infer<typeof WeatherToolResultSchema>;
+interface SemanticScholarResponse {
+  data: SemanticScholarPaper[];
+  total: number;
+}
 
-const WeatherToolResultSchema = z.object({
-  temperature: z.number(),
-  feelsLike: z.number(),
-  humidity: z.number(),
-  windSpeed: z.number(),
-  windGust: z.number(),
-  conditions: z.string(),
-  location: z.string(),
-});
-
-export const weatherTool = createTool({
-  id: 'get-weather',
-  description: 'Get current weather for a location',
+/**
+ * Tool to search for academic papers on Semantic Scholar
+ */
+export const searchPapersTool = createTool({
+  id: 'searchPapers',
+  description: 'Search for academic research papers on any scientific topic using Semantic Scholar API. Returns paper titles, authors, abstracts, citation counts, and URLs.',
   inputSchema: z.object({
-    location: z.string().describe('City name'),
+    query: z.string().describe('The research topic or query to search for (e.g., "machine learning", "CRISPR gene editing", "climate change impacts")'),
+    limit: z.number().optional().default(10).describe('Number of papers to retrieve (default: 10, max: 20)'),
   }),
-  outputSchema: WeatherToolResultSchema,
   execute: async ({ context }) => {
-    return await getWeather(context.location);
+    const { query, limit = 10 } = context;
+    
+    console.log(`🔍 Searching papers for: "${query}"`);
+
+    try {
+      const searchUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${Math.min(limit, 20)}&fields=title,abstract,year,authors,citationCount,isOpenAccess,url`;
+      
+      const response = await fetch(searchUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Semantic Scholar API returned status ${response.status}`);
+      }
+
+      const data: SemanticScholarResponse = await response.json();
+      
+      if (!data.data || data.data.length === 0) {
+        return {
+          success: false,
+          message: `No papers found for topic: "${query}". Try a different search term or broader topic.`,
+          papers: [],
+        };
+      }
+
+      const papers = data.data.map((paper) => ({
+        title: paper.title || 'Untitled',
+        authors: paper.authors?.map(a => a.name).join(', ') || 'Unknown authors',
+        year: paper.year || 'N/A',
+        abstract: paper.abstract || 'No abstract available',
+        citationCount: paper.citationCount || 0,
+        isOpenAccess: paper.isOpenAccess || false,
+        url: paper.url || `https://www.semanticscholar.org/paper/${paper.paperId}`,
+      }));
+
+      console.log(`✅ Found ${papers.length} papers`);
+
+      return {
+        success: true,
+        message: `Found ${papers.length} papers on "${query}"`,
+        totalResults: data.total,
+        papers,
+      };
+    } catch (error) {
+      console.error('Error fetching papers:', error);
+      return {
+        success: false,
+        message: `Failed to fetch papers: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        papers: [],
+      };
+    }
   },
 });
 
-const getWeather = async (location: string) => {
-  const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
-  const geocodingResponse = await fetch(geocodingUrl);
-  const geocodingData = (await geocodingResponse.json()) as GeocodingResponse;
+/**
+ * Tool to get details of a specific paper by its Semantic Scholar ID
+ */
+export const getPaperDetailsTool = createTool({
+  id: 'getPaperDetails',
+  description: 'Get detailed information about a specific research paper including full abstract, references, and citations.',
+  inputSchema: z.object({
+    paperId: z.string().describe('The Semantic Scholar paper ID'),
+  }),
+  execute: async ({ context }) => {
+    const { paperId } = context;
+    
+    console.log(`📄 Fetching details for paper: ${paperId}`);
 
-  if (!geocodingData.results?.[0]) {
-    throw new Error(`Location '${location}' not found`);
-  }
+    try {
+      const detailsUrl = `https://api.semanticscholar.org/graph/v1/paper/${paperId}?fields=title,abstract,year,authors,citationCount,referenceCount,fieldsOfStudy,publicationDate,journal,url`;
+      
+      const response = await fetch(detailsUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
-  const { latitude, longitude, name } = geocodingData.results[0];
+      if (!response.ok) {
+        throw new Error(`Paper not found or API error: ${response.status}`);
+      }
 
-  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code`;
+      const paper = await response.json();
 
-  const response = await fetch(weatherUrl);
-  const data = (await response.json()) as WeatherResponse;
+      return {
+        success: true,
+        paper: {
+          title: paper.title,
+          authors: paper.authors?.map((a: any) => a.name).join(', '),
+          year: paper.year,
+          abstract: paper.abstract || 'No abstract available',
+          citationCount: paper.citationCount,
+          referenceCount: paper.referenceCount,
+          fieldsOfStudy: paper.fieldsOfStudy?.join(', '),
+          publicationDate: paper.publicationDate,
+          journal: paper.journal?.name,
+          url: paper.url,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching paper details:', error);
+      return {
+        success: false,
+        message: `Failed to fetch paper details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  },
+});
 
-  return {
-    temperature: data.current.temperature_2m,
-    feelsLike: data.current.apparent_temperature,
-    humidity: data.current.relative_humidity_2m,
-    windSpeed: data.current.wind_speed_10m,
-    windGust: data.current.wind_gusts_10m,
-    conditions: getWeatherCondition(data.current.weather_code),
-    location: name,
-  };
-};
+/**
+ * Tool to find papers by a specific author
+ */
+export const searchByAuthorTool = createTool({
+  id: 'searchByAuthor',
+  description: 'Find research papers by a specific author name.',
+  inputSchema: z.object({
+    authorName: z.string().describe('The author name to search for'),
+    limit: z.number().optional().default(10).describe('Number of papers to retrieve'),
+  }),
+  execute: async ({ context }) => {
+    const { authorName, limit = 10 } = context;
+    
+    console.log(`👤 Searching papers by author: "${authorName}"`);
 
-function getWeatherCondition(code: number): string {
-  const conditions: Record<number, string> = {
-    0: 'Clear sky',
-    1: 'Mainly clear',
-    2: 'Partly cloudy',
-    3: 'Overcast',
-    45: 'Foggy',
-    48: 'Depositing rime fog',
-    51: 'Light drizzle',
-    53: 'Moderate drizzle',
-    55: 'Dense drizzle',
-    56: 'Light freezing drizzle',
-    57: 'Dense freezing drizzle',
-    61: 'Slight rain',
-    63: 'Moderate rain',
-    65: 'Heavy rain',
-    66: 'Light freezing rain',
-    67: 'Heavy freezing rain',
-    71: 'Slight snow fall',
-    73: 'Moderate snow fall',
-    75: 'Heavy snow fall',
-    77: 'Snow grains',
-    80: 'Slight rain showers',
-    81: 'Moderate rain showers',
-    82: 'Violent rain showers',
-    85: 'Slight snow showers',
-    86: 'Heavy snow showers',
-    95: 'Thunderstorm',
-    96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail',
-  };
-  return conditions[code] || 'Unknown';
-}
+    try {
+      // First, search for the author
+      const authorSearchUrl = `https://api.semanticscholar.org/graph/v1/author/search?query=${encodeURIComponent(authorName)}&limit=1`;
+      
+      const authorResponse = await fetch(authorSearchUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!authorResponse.ok) {
+        throw new Error('Author not found');
+      }
+
+      const authorData = await authorResponse.json();
+      
+      if (!authorData.data || authorData.data.length === 0) {
+        return {
+          success: false,
+          message: `No author found with name: "${authorName}"`,
+          papers: [],
+        };
+      }
+
+      const authorId = authorData.data[0].authorId;
+
+      // Get papers by this author
+      const papersUrl = `https://api.semanticscholar.org/graph/v1/author/${authorId}/papers?limit=${limit}&fields=title,abstract,year,citationCount,url`;
+      
+      const papersResponse = await fetch(papersUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!papersResponse.ok) {
+        throw new Error('Failed to fetch author papers');
+      }
+
+      const papersData = await papersResponse.json();
+
+      const papers = papersData.data.map((paper: any) => ({
+        title: paper.title,
+        year: paper.year,
+        abstract: paper.abstract || 'No abstract available',
+        citationCount: paper.citationCount,
+        url: paper.url,
+      }));
+
+      return {
+        success: true,
+        message: `Found ${papers.length} papers by ${authorName}`,
+        authorName: authorData.data[0].name,
+        papers,
+      };
+    } catch (error) {
+      console.error('Error searching by author:', error);
+      return {
+        success: false,
+        message: `Failed to search by author: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        papers: [],
+      };
+    }
+  },
+});
