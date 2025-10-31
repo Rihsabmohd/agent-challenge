@@ -10,15 +10,44 @@
 
 ## 🚀 Overview
 
-**DeSci Research Partner** is an
-- **Custom frontend** to showcase your agent's functionality
+**DeSci Research Partner** is an AI-powered research assistant that helps you **search, summarize, and explore academic papers**.  
+It integrates:
+- 🧩 **Mastra** for intelligent agent orchestration  
+- ⚙️ **CopilotKit** for an interactive chat interface  
+- 🌐 **Nosana Network** for decentralized GPU execution  
 
-### Agent Ideas & Examples
+This app allows users to search scientific topics, fetch relevant papers (e.g., from Semantic Scholar), and view summaries — all within a clean chat-style interface.
 
-The possibilities are endless! Here are some ideas to get you started:
+---
 
-- 🤖 **Personal Assistant** - Schedule management, email drafting, task automation
-- 📊 **Data Analyst Agent** - Fetch financial data, generate insights, create visualizations
+## ✨ Features
+
+- 🔍 **Smart Paper Search** — Instantly find research papers by topic  
+- 🧠 **AI Summaries** — Summarizes findings and highlights key insights  
+- 📊 **Citation & Metadata Display** — View authors, year, abstract, and citations  
+- 💬 **Interactive Chat UI** — Powered by `@copilotkit/react-ui`  
+- 🌐 **Nosana-Powered AI Execution** — Decentralized model inference  
+
+---
+
+## 🧩 Tech Stack
+
+| Component | Description |
+|------------|-------------|
+| **Next.js (App Router)** | Frontend framework |
+| **CopilotKit** | Conversational AI UI components |
+| **Mastra** | Agent orchestration system |
+| **Nosana Network** | Decentralized GPU compute |
+| **TailwindCSS** | Responsive and modern UI styling |
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/<your-username>/desci-research-partner.git
+cd desci-research-partner
 - 🌐 **Web Researcher** - Aggregate information from multiple sources, summarize findings
 - 🛠️ **DevOps Helper** - Monitor services, automate deployments, manage infrastructure
 - 🎨 **Content Creator** - Generate social media posts, blog outlines, marketing copy
