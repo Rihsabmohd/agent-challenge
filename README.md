@@ -1,22 +1,16 @@
-# Builders' Challenge #3: AI Agents 102
-**Presented by Nosana and Mastra**
+# 🧠 DeSci Research Partner  
+**AI-powered academic research assistant built with Mastra + Nosana + CopilotKit**
 
-![Agent](./assets/NosanaBuildersChallenge03.jpg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![Mastra](https://img.shields.io/badge/Mastra-Agent_Framework-blue)
+![Nosana](https://img.shields.io/badge/Nosana-Decentralized_GPU-purple)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## Welcome to the AI Agent Challenge
+---
 
-Build and deploy intelligent AI agents using the **Mastra framework** on the **Nosana decentralized compute network**. Whether you're a beginner or an experienced developer, this challenge has something for everyone!
+## 🚀 Overview
 
-## 🎯 Challenge Overview
-
-**Your Mission:** Build an intelligent AI agent with a frontend interface and deploy it on Nosana's decentralized network.
-
-### What You'll Build
-
-Create an AI agent that performs real-world tasks using:
-- **Mastra framework** for agent orchestration
-- **Tool calling** to interact with external services
-- **MCP (Model Context Protocol)** for enhanced capabilities
+**DeSci Research Partner** is an
 - **Custom frontend** to showcase your agent's functionality
 
 ### Agent Ideas & Examples
