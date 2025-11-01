@@ -274,19 +274,13 @@ Output: Similar papers based on content
 ## 🎬 Demo Video
 
 ### Where to Find
-- **[YouTube](https://youtube.com)** - Full demo and walkthrough
+- **[Loom Video](https://www.loom.com/share/050a3d9f19a84f32965ecdcf07d8f9a4?t=125)** - Full demo and walkthrough
 - **[Twitter](https://twitter.com)** - Quick highlights
 - **[Nosana Discord](https://discord.com/channels/236263424676331521)** - Community showcase
 
-### Demo Contents
-- 0:00-0:15 - Project overview and features
-- 0:15-0:45 - Chat interface walkthrough
-- 0:45-1:15 - Advanced search with filters
-- 1:15-1:45 - Library and bookmarking
-- 1:45-2:15 - Citation generation
-- 2:15-2:30 - Deployment on Nosana
 
-**Link to Demo:** [📹 Watch Demo Video Here]
+
+**Link to Demo:** [[📹 Watch Demo Video Here]](https://www.loom.com/share/050a3d9f19a84f32965ecdcf07d8f9a4?t=125)
 
 ---
 
