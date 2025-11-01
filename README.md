@@ -274,7 +274,7 @@ Output: Similar papers based on content
 ## 🎬 Demo Video
 
 ### Where to Find
-- **[Loom Video](<div>
+- **(<div>
     <a href="https://www.loom.com/share/80bfe7db56d740a582f881918b5848ac">
       <p>Exploring the New Deployment Features and Citation Methods - Watch Video</p>
     </a>
@@ -436,68 +436,4 @@ Thank you for using DeSci Research Partner! Happy researching! 🚀
 
 
 
----
-
-#sBZry2_0YTNi1OjPt_ZNiwr4gGC1DPTji2zdKGJos1QEyVGBzTq_oLalKkeHx3tq2tQtzghyIhYoF4_sFmej1YL1WtnFQyH0y1epowKmDFpDz_EdGKH2cYKTleuTu97viowkIIMqoDgMqTD0uBaZNGwjjsM07T)
-
-### Setup Your Development Environment
-
-#### **Step 1: Fork, Clone and Quickstart**
-
-```bash
-# Fork this repo on GitHub, then clone your fork
-git clone https://github.com/YOUR-USERNAME/agent-challenge
-
-cd agent-challenge
-
-cp .env.example .env
-
-pnpm i
-
-pnpm run dev:ui      # Start UI server (port 3000)
-pnpm run dev:agent   # Start Mastra agent server (port 4111)
-```
-
-Open <http://localhost:3000> to see your agent in action in the frontend.
-Open <http://localhost:4111> to open up the Mastra Agent Playground.
-
-#### **Step 2: Choose Your LLM for Development (Optional)**
-
-Pick one option below to power your agent during development:
-
-##### Option A: Use Shared Nosana LLM Endpoint (Recommended - No Setup!)
-
-We provide a free LLM endpoint hosted on Nosana for development. Edit your `.env`:
-
-```env
-# Qwen3:8b - Nosana Endpoint
-# Note baseURL for Ollama needs to be appended with `/api`
-OLLAMA_API_URL=https://3yt39qx97wc9hqwwmylrphi4jsxrngjzxnjakkybnxbw.node.k8s.prd.nos.ci/api
-MODEL_NAME_AT_ENDPOINT=qwen3:8b
-```
-
-If it goes down, reach out on [Discord](https://discord.com/channels/236263424676331521/1354391113028337664)
-
-##### Option B: Use Local LLM
-
-Run Ollama locally (requires [Ollama installed](https://ollama.com/download)):
-
-```bash
-ollama pull qwen3:0.6b
-ollama serve
-```
-
-Edit your `.env`:
-```env
-OLLAMA_API_URL=http://127.0.0.1:11434/api
-MODEL_NAME_AT_ENDPOINT=qwen3:0.6b
-```
-
-##### Option C: Use OpenAI
-
-Add to your `.env` and uncomment the OpenAI line in `src/mastra/agents/index.ts`:
-
-```env
-OPENAI_API_KEY=your-key-here
-```
-
+-
